@@ -35,7 +35,7 @@ export async function onRequestPost(context) {
 export async function onRequestGet() {
   return new Response(JSON.stringify({
     status: true,
-    msg: "Use POST"
+    msg: "Sayonara...................."
   }), {
     headers: { "Content-Type": "application/json" }
   });
