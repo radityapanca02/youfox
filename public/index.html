@@ -1,62 +1,251 @@
-<title>RESPONSE JSON</title>
-TEST REQUEST GAK YA.....
-<script>
-  const BOT_TOKEN = "8421411507:AAFClLjVJKLNGY3D3OwJBJNziELQcTdngCQ";
-const CHAT_ID = "-1003652938360";
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESPONSE JSON - Universal Logger</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .test-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .response {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .success {
+            background: #10b981;
+        }
+        .error {
+            background: #ef4444;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+        .method-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 UNIVERSAL REQUEST LOGGER 🔥</h1>
+        <p style="text-align: center;">Test semua HTTP methods ke Telegram</p>
+        
+        <div class="test-section">
+            <h3>📡 Endpoint Configuration</h3>
+            <label>Endpoint URL:</label>
+            <input type="text" id="endpoint" placeholder="https://your-api.vercel.app/api/logger" value="">
+            
+            <label>Custom Data (JSON):</label>
+            <textarea id="customData" rows="4" placeholder='{"username": "test", "password": "123"}'></textarea>
+        </div>
 
-export default async function handler(req, res) {
-    const ip =
-        req.headers["x-forwarded-for"]?.split(",")[0] ||
-        req.socket.remoteAddress ||
-        "unknown";
+        <div class="test-section">
+            <h3>🎯 Test All Methods</h3>
+            <div class="method-buttons">
+                <button onclick="testRequest('GET')">GET</button>
+                <button onclick="testRequest('POST')">POST</button>
+                <button onclick="testRequest('PUT')">PUT</button>
+                <button onclick="testRequest('DELETE')">DELETE</button>
+                <button onclick="testRequest('PATCH')">PATCH</button>
+                <button onclick="testRequest('OPTIONS')">OPTIONS</button>
+                <button onclick="testRequest('HEAD')">HEAD</button>
+            </div>
+            
+            <button onclick="testAllMethods()" style="width: 100%; margin-top: 15px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                🚀 TEST ALL METHODS
+            </button>
+        </div>
 
-    const time = new Date().toLocaleString("id-ID", {
-        timeZone: "Asia/Jakarta"
-    });
+        <div class="test-section">
+            <h3>📋 Response Log</h3>
+            <div id="responseLog" class="response">Waiting for requests...</div>
+        </div>
+    </div>
 
-    const method = req.method;
-    const url = req.url;
+    <script>
+        const BOT_TOKEN = "8421411507:AAFClLjVJKLNGY3D3OwJBJNziELQcTdngCQ";
+        const CHAT_ID = "-1003652938360";
 
-    // body mentah (kalau ada)
-    let body = "";
-    try {
-        body = JSON.stringify(req.body);
-    } catch (e) {
-        body = "unreadable";
-    }
+        // Function untuk log ke UI
+        function log(message, isError = false) {
+            const logDiv = document.getElementById('responseLog');
+            const timestamp = new Date().toLocaleTimeString('id-ID');
+            const statusClass = isError ? 'error' : 'success';
+            logDiv.innerHTML += `\n[${timestamp}] <span class="status ${statusClass}">${message}</span>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
 
-    const message = `
-🔥 REQUEST MASUK KE INVENTA 🔥
-------------------------------
-method : ${method}
-url    : ${url}
-ip     : ${ip}
-time   : ${time}
+        // Function untuk test request
+        async function testRequest(method) {
+            const endpoint = document.getElementById('endpoint').value;
+            const customDataText = document.getElementById('customData').value;
+            
+            if (!endpoint) {
+                alert('Masukkan endpoint URL terlebih dahulu!');
+                return;
+            }
 
-body:
-${body}
+            let customData = {};
+            try {
+                if (customDataText.trim()) {
+                    customData = JSON.parse(customDataText);
+                }
+            } catch (e) {
+                log(`❌ Invalid JSON: ${e.message}`, true);
+                return;
+            }
+
+            log(`🚀 Testing ${method} request...`);
+
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Custom-Header': 'Test-Value',
+                        'User-Agent': 'Universal-Logger-Test'
+                    }
+                };
+
+                // Tambahkan body untuk methods yang mendukung
+                if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                    options.body = JSON.stringify({
+                        ...customData,
+                        test: true,
+                        timestamp: new Date().toISOString(),
+                        method: method
+                    });
+                }
+
+                const response = await fetch(endpoint, options);
+                const data = await response.json();
+                
+                log(`✅ ${method} - Status: ${response.status}`);
+                log(`Response: ${JSON.stringify(data, null, 2)}`);
+
+                // Kirim notifikasi ke Telegram
+                await sendToTelegram(method, response.status, data);
+
+            } catch (error) {
+                log(`❌ ${method} - Error: ${error.message}`, true);
+            }
+        }
+
+        // Function untuk kirim ke Telegram
+        async function sendToTelegram(method, status, responseData) {
+            const message = `
+🎯 TEST REQUEST COMPLETED
+━━━━━━━━━━━━━━━━━━━━━━
+Method: ${method}
+Status: ${status}
+Time: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}
+
+Response:
+${JSON.stringify(responseData, null, 2)}
+━━━━━━━━━━━━━━━━━━━━━━
 `;
 
-    // Kirim ke Telegram (BEST EFFORT)
-    try {
-        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: message
-            })
-        });
-    } catch (e) {
-        // kalau telegram gagal, server tetap jawab
-        console.error("Telegram error:", e);
-    }
+            try {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+            } catch (e) {
+                console.error('Telegram error:', e);
+            }
+        }
 
-    // BALAS APA AJA (BIAR APP TIDAK CRASH)
-    return res.status(200).json({
-        status: "ok",
-        from: "inventa.my.id",
-        note: "request received"
-    });
-}
-</script>
+        // Function untuk test semua methods sekaligus
+        async function testAllMethods() {
+            const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'];
+            log('🔥 Testing ALL methods...');
+            
+            for (const method of methods) {
+                await testRequest(method);
+                // Delay 500ms antar request
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            log('✨ ALL tests completed!');
+        }
+
+        // Clear log
+        function clearLog() {
+            document.getElementById('responseLog').innerHTML = 'Log cleared...';
+        }
+    </script>
+</body>
+</html>
